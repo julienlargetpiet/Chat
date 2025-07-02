@@ -153,9 +153,7 @@ int main(int argc, char *argv[]) {
     endwin();
     return -1;
   };
-
-  freeaddrinfo(res);
-
+ 
   status = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &use_it, sizeof(int));
   if (status == -1) {
     endwin();
@@ -167,7 +165,9 @@ int main(int argc, char *argv[]) {
     endwin();
     return -1;
   };
- 
+
+  freeaddrinfo(res);
+
   thread_args_struct thread_arg;
   thread_arg.sockfd = &sockfd;
   thread_arg.msg_queue = msg_queue;
