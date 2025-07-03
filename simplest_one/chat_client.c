@@ -118,8 +118,7 @@ int main(int argc, char *argv[]) {
   user_name = argv[3];
   char after_user_name[2] = ": ";
   char final_user_name[len_name + 2];
-  memcpy(final_user_name, after_user_name, 2);
-  memmove(final_user_name + len_name, final_user_name, 10);
+  memcpy(final_user_name + len_name, after_user_name, 2);
   memcpy(final_user_name, user_name, len_name);
 
   initscr();
@@ -224,8 +223,7 @@ int main(int argc, char *argv[]) {
     } else {
         msg[MAX_MSG_SIZE - 1] = '\0';
     };
-    memcpy(usr_msg, msg, MAX_MSG_SIZE - 10);
-    memmove(usr_msg + len_name + 2, usr_msg, MAX_MSG_SIZE - 10);
+    memcpy(usr_msg + len_name + 2, msg, MAX_MSG_SIZE - 10);
     memcpy(usr_msg, final_user_name, len_name + 2);
     if (send_all(sockfd, usr_msg) == -1) {
         endwin();
