@@ -73,7 +73,7 @@ void *recv_messages(void *x) {
       };
       strcpy(args->msg_queue[*args->max_msg - 1], local_buffer);
       for (i = 0; i < *args->max_msg; i++) {
-        mvwprintw(my_win, i + 2, 2, args->msg_queue[i]);
+        mvwprintw(my_win, i + 1, 2, args->msg_queue[i]);
       };
       box(my_win, 0 , 0);
       wrefresh(my_win);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   getmaxyx(stdscr, y, x);
   my_win = newwin(y - (y / 4), x - (x / 5), 1, 1);
 
-  int max_msg = y - (y / 4) - 3;
+  int max_msg = y - (y / 4) - 2;
   char msg_queue[max_msg][MAX_MSG_SIZE];
   int i2;
   for (int i = 0; i < max_msg ; i++) {
