@@ -17,7 +17,7 @@ Now start the server:
 And the client:
 
 ```
-./chat_client
+./chat_client server_ip port username
 ```
 
 **Happy chatting!!!**
