@@ -66,12 +66,12 @@ void *recv_messages(void *x) {
       if (pthread_mutex_lock(&ncurses_mutex) != 0) {
         break;
       };
-      strcpy(args->msg_queue[*args->max_msg - 1], local_buffer);
       i = 1;
       while (i < *args->max_msg) {
         strcpy(args->msg_queue[i - 1], args->msg_queue[i]);
         i += 1;
       };
+      strcpy(args->msg_queue[*args->max_msg - 1], local_buffer);
       for (i = 0; i < *args->max_msg; i++) {
         mvwprintw(my_win, i + 2, 2, args->msg_queue[i]);
       };
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   getmaxyx(stdscr, y, x);
   my_win = newwin(y - (y / 4), x - (x / 5), 1, 1);
 
-  int max_msg = y - (y / 4) - 2;
+  int max_msg = y - (y / 4) - 3;
   char msg_queue[max_msg][MAX_MSG_SIZE];
   int i2;
   for (int i = 0; i < max_msg ; i++) {
