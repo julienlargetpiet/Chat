@@ -73,10 +73,12 @@ void *recv_messages(void *x) {
       };
       strcpy(args->msg_queue[*args->max_msg - 1], local_buffer);
       for (i = 0; i < *args->max_msg; i++) {
+
         mvwprintw(my_win, i + 1, 2, args->msg_queue[i]);
       };
       box(my_win, 0 , 0);
       wrefresh(my_win);
+      wbkgd(my_win, COLOR_PAIR(2));    
       refresh();
       if (pthread_mutex_unlock(&ncurses_mutex) != 0) {
         break;
@@ -121,11 +123,28 @@ int main(int argc, char *argv[]) {
   memcpy(final_user_name, user_name, len_name);
 
   initscr();
+  if(has_colors() == FALSE) {
+    endwin();
+    printf("Your terminal does not support color\n");
+    exit(1);
+  };
+  if(can_change_color() == FALSE) {
+    endwin();
+    printf("Your terminal does not support changing color\n");
+    exit(1);
+  };
+  start_color();
+  init_color(COLOR_WHITE, 555, 755, 755);
+  init_pair(1, COLOR_BLACK, COLOR_WHITE);
+  init_pair(2, COLOR_WHITE, COLOR_BLACK);
+  bkgd(COLOR_PAIR(1));    
   curs_set(1);
   cbreak();
   keypad(stdscr, TRUE);
   getmaxyx(stdscr, y, x);
   my_win = newwin(y - (y / 4), x - (x / 5), 1, 1);
+  wbkgd(my_win, COLOR_PAIR(2));    
+  wrefresh(my_win);
 
   int max_msg = y - (y / 4) - 2;
   char msg_queue[max_msg][MAX_MSG_SIZE];
@@ -185,10 +204,10 @@ int main(int argc, char *argv[]) {
     if (pthread_mutex_lock(&ncurses_mutex) != 0) {
       return -1;
     };
-    move(y - 1, 0); 
-    printw("%s", "Input:                                                \0");
+    move(y - 2, 2); 
+    printw("%s", "Message:                                                \0");
     clrtoeol();
-    move(y - 1, 7); 
+    move(y - 2, 11); 
     refresh();
     if (pthread_mutex_unlock(&ncurses_mutex) != 0) {
       return -1;
