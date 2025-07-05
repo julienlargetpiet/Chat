@@ -159,18 +159,14 @@ int accept_func(int newfd) {
     close(newfd);
     return 0;
   } else {
-    printf("credentials: %s\n", credentials);
     for (i = 0; i < MAX_CLIENTS; i++) {
-      printf("cur credentials: %s\n", ref_credentials[i]);
       if (memcmp(credentials, ref_credentials[i], 20) == 0) {
         is_ok = 1;
         break;
       };
     };
-    printf("ok\n");
     if (!is_ok) {
       response[0] = '0';
-      printf("response: %c\n", response[0]);
       if (send(newfd, response, 1, 0) == -1) {
         close(newfd);
         return 0;
@@ -179,13 +175,11 @@ int accept_func(int newfd) {
       return 0;
     };
     response[0] = '1';
-    printf("response: %c\n", response[0]);
     if (send(newfd, response, 1, 0) == -1) {
       close(newfd);
       return 0;
     };
   };
-  printf("ok2\n");
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
   setsockopt(newfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
