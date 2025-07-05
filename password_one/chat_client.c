@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
       return -1;
     };
   };
-  //sleep(1);
 
   setlocale(LC_ALL, "");
   initscr();
