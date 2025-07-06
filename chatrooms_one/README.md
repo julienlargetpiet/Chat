@@ -31,8 +31,10 @@ Now start the server:
 And the client:
 
 ```
-./chat_client server_ip port username password 
+./chat_client server_ip port username password chatroom_name
 ```
+
+Note: chatrooms are created on the fly while a client is connecting
 
 **Happy chatting!!!**
 
