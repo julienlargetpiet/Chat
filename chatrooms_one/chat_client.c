@@ -196,7 +196,6 @@ int main(int argc, char *argv[]) {
   target_value = 10;
   memset(chatroom_name, '\0', 10);
   memcpy(chatroom_name, argv[5], strlen(argv[5]));
-  printf("chatroom: %s\n", chatroom_name);
   if (send_all2(sockfd, chatroom_name, &target_value) == -1) {
     return -1;
   };
