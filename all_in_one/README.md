@@ -2,6 +2,10 @@
 
 <img src="out.gif">
 
+# What bring this version ?
+
+AES encryption for all communication
+
 # How to use it ?
 
 Server side:
