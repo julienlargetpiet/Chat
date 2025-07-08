@@ -10,11 +10,11 @@ AES encryption for all communication
 
 Server side:
 
-Just `gcc chat_server.c -o chat_server`
+Just `gcc chat_server.c -lcrypto -o chat_server`
 
 Client side:
 
-Just `gcc chat_client.c -lncurses -lpthread -o chat_client`
+Just `gcc chat_client.c -lncurses -lpthread -lcrypto -o chat_client`
 
 For the admin, set credentials of allowed accounts:
 
