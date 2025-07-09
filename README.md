@@ -2,11 +2,17 @@
 
 <img src="out.gif">
 
-# What bring this version ?
+# Description
 
-AES encryption for all communication
+A really simple terminal based chatroom programm where all communication is AES ciphered.
 
-# How to use it ?
+# Requirements
+
+- `ncurses.h`
+- `SDL2/SDL.h`
+- `openssl/evp.h`
+
+# setting up
 
 Server side:
 
@@ -14,7 +20,7 @@ Just `gcc chat_server.c -lcrypto -o chat_server`
 
 Client side:
 
-Just `gcc chat_client.c -lncurses -lpthread -lcrypto -o chat_client`
+Just `gcc chat_client.c -lncurses -lpthread -lcrypto $(sdl2-config --cflags --libs) -o chat_client`
 
 For the admin, set credentials of allowed accounts:
 
@@ -39,6 +45,12 @@ And the client:
 ```
 
 Note: chatrooms are created on the fly while a client is connecting
+
+# What you can do ?
+
+- Write messages 
+- Delete characters
+- poke 
 
 **Happy chatting!!!**
 
