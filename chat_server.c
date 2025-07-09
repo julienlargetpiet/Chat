@@ -671,15 +671,17 @@ int main(void) {
   while ((entry = readdir(dir)) != NULL) {
     if (strlen(entry->d_name) == nb_bytes) {
       if (memcmp(filename, entry->d_name, nb_bytes) == 0) {
+        i = 1;
         break;
       };
     };
   };
   closedir(dir);
-  if ((entry = readdir(dir)) == NULL) {
+  if (i == 0) {
     printf("The file does not exist.\n");
     return -1;
   };
+  i = 0;
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
     printf(COLOR_BOLD "File can't be opened in write mode\n" COLOR_OFF);
