@@ -8,6 +8,7 @@
 #include <ncurses.h>
 #include <locale.h>
 #include <openssl/evp.h>
+#include <SDL2/SDL.h>
 
 #define MAX_MSG_SIZE 40
 
@@ -121,6 +122,9 @@ typedef struct {
   int *max_msg;
   char (*msg_queue)[MAX_MSG_SIZE];
   WINDOW *my_win;
+  int * dev;
+  uint32_t *wav_length;
+  unsigned char *wav_buffer;
 } thread_args_struct;
 
 int send_all(int sockfd, char *msg) {
@@ -243,6 +247,22 @@ void *recv_messages(void *x) {
     box(my_win, 0 , 0);
     wrefresh(my_win);
     refresh();
+
+    //mvprintw(0, 27, "%s", local_buffer);
+
+    i = 0;
+    while (local_buffer[i] != ':') {
+      i += 1;
+    };
+    i += 2;
+    if (local_buffer[i] = ':' && local_buffer[i + 1] == 'p') {
+      SDL_PauseAudioDevice(*args->dev, 1); 
+      SDL_ClearQueuedAudio(*args->dev);
+      SDL_QueueAudio(*args->dev, args->wav_buffer, *args->wav_length); 
+      SDL_PauseAudioDevice(*args->dev, 0); 
+      usleep(400000);
+    };
+
     if (pthread_mutex_unlock(&ncurses_mutex) != 0) {
       break;
     };
@@ -263,6 +283,32 @@ int main(int argc, char *argv[]) {
   unsigned char ciphertext[MAX_MSG_SIZE];
   unsigned char tag[16];
 
+  SDL_AudioSpec wav_spec;
+  uint32_t wav_length;
+  unsigned char *wav_buffer;
+
+  char *startup_file = "poke.wav";
+  if (SDL_LoadWAV(startup_file, &wav_spec, &wav_buffer, &wav_length) == NULL) {
+      fprintf(stderr, "Couldn't load WAV: %s\n", SDL_GetError());
+      SDL_Quit();
+      return 1;
+  };
+
+  if (SDL_OpenAudio(&wav_spec, NULL) < 0) {
+      fprintf(stderr, "Couldn't open audio: %s\n", SDL_GetError());
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
+      return 1;
+  };
+
+  int dev = SDL_OpenAudioDevice(
+      NULL,     
+      0,        
+      &wav_spec,
+      NULL,     
+      0         
+  );
+  
   pthread_t messages_thread;
   struct addrinfo hints, *res;
   unsigned char msg[MAX_MSG_SIZE - 10];
@@ -275,17 +321,25 @@ int main(int argc, char *argv[]) {
   int len_name;
   int max_msg;
   if (pthread_mutex_init(&ncurses_mutex, NULL) != 0) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
 
   if (argc < 6) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   if (argc > 6) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   len_name = strlen(argv[3]);
   if (len_name > 8) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   user_name = argv[3];
@@ -302,21 +356,29 @@ int main(int argc, char *argv[]) {
 
   status = getaddrinfo(argv[1], argv[2], &hints, &res);
   if (status != 0) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
  
   sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (sockfd == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   
   status = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &use_it, sizeof(int));
   if (status == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
 
   status = connect(sockfd, res->ai_addr, res->ai_addrlen);
   if (status == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
 
@@ -331,21 +393,29 @@ int main(int argc, char *argv[]) {
   memcpy(credentials + 10, argv[4], strlen(argv[4]));
   fread(iv, 1, 12, f);
   if (send_all2(sockfd, iv, 12) == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   max_msg = recv(sockfd, response, 1, 0);
   if (max_msg == 0) {
     clear();
     endwin();
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else if (max_msg == -1) {
     clear();
     endwin();
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else {
     if (response[0] != '1') {
       clear();
       endwin();
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
   };
@@ -362,41 +432,57 @@ int main(int argc, char *argv[]) {
     tag
   );
   if (send_all2(sockfd, tag, 16) == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   max_msg = recv(sockfd, response, 1, 0);
   if (max_msg == 0) {
     clear();
     endwin();
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else if (max_msg == -1) {
     clear();
     endwin();
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else {
     if (response[0] != '1') {
       clear();
       endwin();
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
   };
 
   if (send_all2(sockfd, ciphertext, 20) == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   max_msg = recv(sockfd, response, 1, 0);
   if (max_msg == 0) {
     clear();
     endwin();
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else if (max_msg == -1) {
     clear();
     endwin();
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else {
     if (response[0] != '1') {
       clear();
       endwin();
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
   };
@@ -407,18 +493,26 @@ int main(int argc, char *argv[]) {
   memcpy(chatroom_name, argv[5], strlen(argv[5]));
   fread(iv, 1, 12, f);
   if (send_all2(sockfd, iv, 12) == -1) {
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   max_msg = recv(sockfd, response, 1, 0);
   if (max_msg == 0) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else if (max_msg == -1) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else {
     if (response[0] != '1') {
       close(sockfd);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
   };
@@ -435,35 +529,51 @@ int main(int argc, char *argv[]) {
   );
   if (send_all2(sockfd, tag, 16) == -1) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   max_msg = recv(sockfd, response, 1, 0);
   if (max_msg == 0) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else if (max_msg == -1) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else {
     if (response[0] != '1') {
       close(sockfd);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
   };
   if (send_all2(sockfd, ciphertext, 10) == -1) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };  
   max_msg = recv(sockfd, response, 1, 0);
   if (max_msg == 0) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else if (max_msg == -1) {
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   } else {
     if (response[0] != '1') {
       close(sockfd);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
   };
@@ -473,12 +583,16 @@ int main(int argc, char *argv[]) {
   if(has_colors() == FALSE) {
     endwin();
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     printf("Your terminal does not support color\n");
     return -1;
   };
   if(can_change_color() == FALSE) {
     endwin();
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     printf("Your terminal does not support changing color\n");
     return -1;
   };
@@ -496,6 +610,7 @@ int main(int argc, char *argv[]) {
   wbkgd(my_win, COLOR_PAIR(2));
   mvprintw(0, 0, "':q' in message to Quit");
   wrefresh(my_win);
+  refresh();
 
   int ref_max_msg = y - (y / 4) - 2;
   char msg_queue[ref_max_msg][MAX_MSG_SIZE];
@@ -514,6 +629,8 @@ int main(int argc, char *argv[]) {
     clear();
     endwin();
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   ciphertext_len = aes_gcm_encrypt(
@@ -531,19 +648,32 @@ int main(int argc, char *argv[]) {
     clear();
     endwin();
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };
   if (send_all2(sockfd, ciphertext, MAX_MSG_SIZE) == -1) {
     clear();
     endwin();
     close(sockfd);
+    SDL_FreeWAV(wav_buffer);
+    SDL_Quit();
     return -1;
   };  
-  
+
+  SDL_PauseAudioDevice(dev, 1); 
+  SDL_ClearQueuedAudio(dev);
+  SDL_QueueAudio(dev, wav_buffer, wav_length); 
+  SDL_PauseAudioDevice(dev, 0); 
+  usleep(400000);
+
   thread_args_struct thread_arg;
   thread_arg.sockfd = &sockfd;
   thread_arg.msg_queue = msg_queue;
   thread_arg.max_msg = &ref_max_msg;
+  thread_arg.dev = &dev;
+  thread_arg.wav_buffer = wav_buffer;
+  thread_arg.wav_length = &wav_length;
   pthread_create(&messages_thread, NULL, recv_messages, (void *)&thread_arg);
 
   char cur_chr;
@@ -557,6 +687,9 @@ int main(int argc, char *argv[]) {
       pthread_mutex_destroy(&ncurses_mutex);
       pthread_cancel(messages_thread);
       pthread_join(messages_thread, NULL);
+      SDL_CloseAudioDevice(dev);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
     move(y - 2, 2); 
@@ -569,6 +702,9 @@ int main(int argc, char *argv[]) {
       pthread_mutex_destroy(&ncurses_mutex);
       pthread_cancel(messages_thread);
       pthread_join(messages_thread, NULL);
+      SDL_CloseAudioDevice(dev);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
     memset(msg, '\0', MAX_MSG_SIZE - 10);
@@ -594,6 +730,9 @@ int main(int argc, char *argv[]) {
       clear();
       endwin();
       close(sockfd);
+      SDL_CloseAudioDevice(dev);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return 0;
     };
     local_max = strlen(msg);
@@ -616,6 +755,9 @@ int main(int argc, char *argv[]) {
       pthread_mutex_destroy(&ncurses_mutex);
       pthread_cancel(messages_thread);
       pthread_join(messages_thread, NULL);
+      SDL_CloseAudioDevice(dev);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
     ciphertext_len = aes_gcm_encrypt(
@@ -634,6 +776,9 @@ int main(int argc, char *argv[]) {
       pthread_mutex_destroy(&ncurses_mutex);
       pthread_cancel(messages_thread);
       pthread_join(messages_thread, NULL);
+      SDL_CloseAudioDevice(dev);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     };
     // Sending ciphertext
@@ -642,6 +787,9 @@ int main(int argc, char *argv[]) {
       pthread_mutex_destroy(&ncurses_mutex);
       pthread_cancel(messages_thread);
       pthread_join(messages_thread, NULL);
+      SDL_CloseAudioDevice(dev);
+      SDL_FreeWAV(wav_buffer);
+      SDL_Quit();
       return -1;
     }; 
   };
