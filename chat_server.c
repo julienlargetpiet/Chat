@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
-#include <pthread.h>
 #include <signal.h>
 #include <dirent.h>
 #include <openssl/evp.h>
@@ -20,13 +19,10 @@
 #define COLOR_OFF   "\e[m"
 #define MAX_MSG_SIZE 40
 
-pthread_t accept_thread;
-int pthread_alrd = 0;
 char ref_credentials[MAX_CLIENTS][20];
 FILE *f;
 
 void end_func(int sign) {
-  pthread_join(accept_thread, NULL);
   fclose(f);
   exit(0);
 };
