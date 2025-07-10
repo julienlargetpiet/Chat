@@ -14,6 +14,12 @@ A really simple terminal based chatroom programm where all communication is AES 
 
 # setting up
 
+## AES Key
+
+Server, side, modify the key at line `267` and `289`
+
+Client side, modify the key at line `18`
+
 Server side:
 
 Just `gcc chat_server.c -lcrypto -o chat_server`
